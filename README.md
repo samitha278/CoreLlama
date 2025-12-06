@@ -84,3 +84,50 @@ Complete implementation with mathematical derivations, visualizations, and compa
 - [Designing Positional Encoding](https://huggingface.co/blog/designing-positional-encoding) (Hugging Face)
 
 ---
+
+
+
+## RMS Normalization
+
+### From Layer Normalization to RMS Norm
+
+**Layer Normalization** computes two statistics to normalize activations:
+
+$$\text{LayerNorm}(x) = \gamma \cdot \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta$$
+
+where:
+- $\mu = \frac{1}{d}\sum_{i=1}^{d} x_i$ (mean - re-centering)
+- $\sigma^2 = \frac{1}{d}\sum_{i=1}^{d} (x_i - \mu)^2$ (variance - re-scaling)
+
+
+### RMS Norm Hypothesis
+
+**Key Insight:** Recentering (subtracting mean) may not be necessary. Only rescaling provides the main benefit.
+
+**RMS Normalization** uses only one statistic - the Root Mean Square:
+
+$$\text{RMSNorm}(x) = \gamma \cdot \frac{x}{\text{RMS}(x)}$$
+
+where:
+
+$$\text{RMS}(x) = \sqrt{\frac{1}{d}\sum_{i=1}^{d} x_i^2 + \epsilon}$$
+
+
+
+### Advantages
+
+**Simpler:** No mean computation needed  
+**Faster:** ~10-15% speedup over LayerNorm  
+**Effective:** Empirically performs as well as LayerNorm  
+**Stable:** Better gradient flow in deep networks
+
+
+
+- Implementation : [norm_methods.ipynb](https://github.com/samitha278/CoreLlama/blob/main/norm_methods.ipynb)
+
+
+### References
+
+- [Root Mean Square Layer Normalization](https://arxiv.org/pdf/1910.07467) (Original RMSNorm Paper)
+
+---
