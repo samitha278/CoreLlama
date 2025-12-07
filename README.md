@@ -8,7 +8,7 @@
 
 <p align="center">
   <img src="images\llama_arc.png" alt="LLaMA-2 Architecture" width="240"/>
-  <img src="images\llama_model.png" alt="LLaMA-2 Model" width="200"/><br>
+  <img src="images\llama_model.png" alt="LLaMA-2 Model" width="230"/><br>
   <sub>Source: <a href="https://docs.nvidia.com/deeplearning/transformer-engine-releases/release-1.11/user-guide/examples/te_llama/tutorial_accelerate_hf_llama_with_te.html">Nvidia llama doc</a></sub>
 </p>
 
@@ -186,5 +186,88 @@ $$\text{Attention}(Q_{\text{new}}, [K_{\text{cached}}, K_{\text{new}}], [V_{\tex
 
 - [GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](https://arxiv.org/pdf/2305.13245) (Original GQA Paper)
 - [Fast Transformer Decoding: One Write-Head is All You Need](https://arxiv.org/abs/1911.02150) (Original KV Cache/MQA Paper)
+
+---
+
+
+
+
+
+
+
+## SwiGLU: Gated Feed-Forward Networks
+
+
+Llama 2 replaces ReLU FFNs with SwiGLU (Swish Gated Linear Unit) using continuous gating to dynamically control feature importance per neuron
+
+
+**Original Transformer (2017):**
+
+$$\text{FFN}(x) = W_2 \cdot \text{ReLU}(W_1 x)$$
+
+- Simple on/off switch
+- Kills negative values (sets to 0)
+
+**Llama 2 (2022):**
+
+$$\text{FFN}_{\text{SwiGLU}}(x) = W_2 \left(\text{Swish}(W_1 x) \otimes W_3 x\right)$$
+
+where:
+
+$$\text{Swish}(x) = x \cdot \sigma(x) = \frac{x}{1 + e^{-x}}$$
+
+- Smooth gating (controls how much, not just on/off)
+- No information loss
+
+
+
+
+### SwiGLU FFN & Activation Functions
+
+<p align="center">
+  <img src="images/swiglu.png" alt="SwiGLU FFN" width="200"/>
+  <img src="images/activations.png" alt="Activation Comparison" width="200"/>
+</p>
+
+*Left: SwiGLU FFN ([source](https://rohitbandaru.github.io/assets/img/blog/transformer_pt2/swiglu.png)) | Right: Activation functions comparison*
+
+
+
+### The Gating Mechanism
+
+SwiGLU splits the computation into two paths:
+
+1. **Gate path:** $\text{Swish}(W_1 x)$ — learns "how much" to use each feature
+2. **Value path:** $W_3 x$ — learns "what" features to compute
+
+Combined via element-wise multiplication ($\otimes$):
+
+$$\text{Output} = \text{Gate} \otimes \text{Value}$$
+
+This allows the network to learn both **feature content** and **feature importance** simultaneously.
+
+
+
+
+### Parameter Efficient Design
+
+Llama 2 uses a clever trick to maintain the same parameter count:
+
+**Standard FFN:** $d_{\text{model}} \rightarrow d_{ff} \rightarrow d_{\text{model}}$  
+Parameters: $2 \times d_{\text{model}} \times d_{ff}$
+
+**SwiGLU:** $d_{\text{model}} \rightarrow \frac{2}{3}d_{ff} \rightarrow d_{\text{model}}$  
+Parameters: $3 \times d_{\text{model}} \times \frac{2}{3}d_{ff} = 2 \times d_{\text{model}} \times d_{ff}$ 
+
+**Result:** Same parameters, better performance
+
+
+
+
+
+### References
+
+- [GLU Variants Improve Transformer](https://arxiv.org/abs/2002.05202) (Original SwiGLU Paper, 2020)
+- [Swish: A Self-Gated Activation Function](https://arxiv.org/abs/1710.05941) (Swish Activation, 2017)
 
 ---
