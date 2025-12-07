@@ -8,7 +8,7 @@
 
 <p align="center">
   <img src="images\llama_arc.png" alt="LLaMA-2 Architecture" width="240"/>
-  <img src="images\llama_model.png" alt="LLaMA-2 Model" width="240"/><br>
+  <img src="images\llama_model.png" alt="LLaMA-2 Model" width="200"/><br>
   <sub>Source: <a href="https://docs.nvidia.com/deeplearning/transformer-engine-releases/release-1.11/user-guide/examples/te_llama/tutorial_accelerate_hf_llama_with_te.html">Nvidia llama doc</a></sub>
 </p>
 
@@ -128,6 +128,63 @@ $$\text{RMS}(x) = \sqrt{\frac{1}{d}\sum_{i=1}^{d} x_i^2 + \epsilon}$$
 
 ### References
 
+- [Layer Normalization](https://arxiv.org/pdf/1607.06450) (Original Layer Norm Paper)
 - [Root Mean Square Layer Normalization](https://arxiv.org/pdf/1910.07467) (Original RMSNorm Paper)
+
+
+
+
+
+
+---
+
+## Grouped Query Attention (GQA) & KV Cache
+
+### Overview
+
+Efficient attention mechanism that reduces memory and computation costs while maintaining model quality.
+
+
+### Attention Variants
+
+<p align="center">
+  <img src="images/gqa.png" alt="Grouped Query Attention" width="500"/>
+</p>
+
+**Multi-Head Attention (MHA):** Each head has separate Q, K, V projections
+- Memory: $n_{heads} \times (d_k + d_v)$ per layer
+
+**Multi-Query Attention (MQA):** Single K, V shared across all query heads
+- Memory: $d_k + d_v$ per layer
+- Fast but may reduce quality
+
+**Grouped Query Attention (GQA):** Multiple query heads share K, V within groups
+- Memory: $n_{groups} \times (d_k + d_v)$ per layer
+- **Best trade-off:** Speed of MQA + Quality of MHA
+
+
+
+### Key-Value (KV) Cache
+
+During autoregressive generation previous tokens' keys and values are cached:
+
+$$\text{Attention}(Q_{\text{new}}, [K_{\text{cached}}, K_{\text{new}}], [V_{\text{cached}}, V_{\text{new}}])$$
+
+**Benefits:**
+- Avoids recomputing K, V for all previous tokens
+- Reduces computation from $O(n^2)$ to $O(n)$ per step
+- Essential for efficient inference
+
+**With GQA:**
+- Smaller cache size ($n_{groups}$ instead of $n_{heads}$ K, V pairs)
+- Faster memory access
+- Enables longer context windows
+
+
+
+### References
+
+- [GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](https://arxiv.org/pdf/2305.13245) (Original GQA Paper)
+- [Fast Transformer Decoding: One Write-Head is All You Need](https://arxiv.org/abs/1911.02150) (Original KV Cache/MQA Paper)
 
 ---
