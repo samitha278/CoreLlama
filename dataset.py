@@ -36,7 +36,7 @@ class TextDataset(Dataset):
         if self.max_len < l:
             tokens = tokens[:self.max_len]
         else: # pad (if max_len > l)
-            tokens = tokens + [self.tokenizer.pad_token_id] * (self.max_len-l)
+            tokens = tokens + [self.tokenizer.pad_token_id] * (self.max_len+1-l)
 
         # convert to tensor
         tokens = torch.tensor(tokens)

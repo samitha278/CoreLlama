@@ -20,7 +20,7 @@ class LLaMA2Config():
         self.norm_eps = 1e-5
 
         self.max_batch_size = 32
-        self.max_seq_len = 2048
+        self.max_seq_len = 2048    # now 512 
         self.device = device
 
 
@@ -56,7 +56,6 @@ def precompute_theta_pos_frequencies(d_model,max_len,device,base=10000.0):
 
     m = torch.arange(0,max_len,    dtype= torch.float32)
 
-
     freq = torch.outer(m,w_i)  # [max_len,d_model//2]
 
     freq_complex = torch.polar(torch.ones_like(freq),freq)
@@ -67,6 +66,7 @@ def precompute_theta_pos_frequencies(d_model,max_len,device,base=10000.0):
 
 def rope(freq_coomlex,x):
 
+    print(x.shape)
     B,T,C = x.shape
     x_complex = torch.view_as_complex(x.reshape(B,T,C//2,2)) # [x,y] -> x+iy
 
@@ -75,8 +75,6 @@ def rope(freq_coomlex,x):
     x_rotated_real = torch.view_as_real(x_rotated_complex)   # [B,T,C//2,2]
 
     return x_rotated_real.reshape(B,T,C)
-
-
 
 
 
@@ -254,12 +252,14 @@ class LlamaModel(nn.Module):
 
     def forward(self,tokens,start_pos):
 
-        B,T = tokens.shape
+        B,T = tokens.shape       # [B,max_seq_len] = [B,T]
 
-        embds = self.embeddings(tokens)
+        embds = self.embed_tokens(tokens)
+        print(f"lama model embds : {embds.shape}")     # [B,T,C] = [4, 512, 2048] ; C-n_embd
 
         # for RoPE in attn
         freqs_complex = self.freqs_complex[start_pos:start_pos + T]
+        print(f"lama model freq complex : {freqs_complex.shape}")
 
         out = embds
         for layer in self.layers:
@@ -293,6 +293,7 @@ class LlamaForCausalLM(nn.Module):
 
 
     def forward(self,tokens,start_pos):
+        print(f"lama causal llm : {tokens.shape}") 
 
         out = self.model(tokens,start_pos)
 
