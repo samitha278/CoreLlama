@@ -2,23 +2,26 @@ import torch
 import torch.nn as nn
 
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+# import sys;exit(0)
+
 
 class LLaMA2Config():
 
     def __init__(self):
 
-        self.n_embd = 4096
-        self.n_layers = 32
+        self.n_embd = 2048
+        self.n_layer = 32
         self.heads = 32           # for queries
-        self.n_kv_heads = None    # for k v
-        self.vocab_size = None
-        self.n_hidden = None      # for mlp
-
+        self.n_kv_heads = 8    # for k v
+        self.vocab_size = 32000
+        
         self.norm_eps = 1e-5
 
         self.max_batch_size = 32
         self.max_seq_len = 2048
-
+        self.device = device
 
 
 
@@ -26,7 +29,7 @@ class LLaMA2Config():
 
 class LlamaRMSNorm(nn.Module):
 
-    def __init__(self,n_embd,norm_eps):
+    def __init__(self,n_embd,norm_eps=1e-5):
         super().__init__()
         self.norm_eps = norm_eps
 
@@ -199,16 +202,16 @@ class LlamaAttention(nn.Module):
 
 class LlamaDecorderLayer(nn.Module):
 
-    def _init__(self,config):
+    def __init__(self,config):
         super().__init__()
 
         self.config = config
 
-        self.input_layernorm = LlamaRMSNorm(config._n_embd)
+        self.input_layernorm = LlamaRMSNorm(config.n_embd)
 
-        self.self_attn = LlamaAttention(config)
+        self.attn = LlamaAttention(config)
 
-        self.post_attention_layernorm = LlamaRMSNorm(config._n_embd)
+        self.post_attention_layernorm = LlamaRMSNorm(config.n_embd)
 
         self.mlp = LlamaMLP(config)
 
@@ -243,10 +246,10 @@ class LlamaModel(nn.Module):
 
         self.layers = nn.ModuleList([LlamaDecorderLayer(config) for _ in range(config.n_layer)])
 
-        self.norm = LlamaRMSNorm(config._n_embd)
+        self.norm = LlamaRMSNorm(config.n_embd)
 
         # for RoPE in attn
-        self.freqs_complex = precompute_theta_pos_frequencies(self.config.n_embd // self.config.n_heads, self.config.max_seq_len , device=self.config.device)
+        self.freqs_complex = precompute_theta_pos_frequencies(self.config.n_embd // self.config.heads, self.config.max_seq_len , device=self.config.device)
 
 
     def forward(self,tokens,start_pos):
