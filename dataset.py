@@ -3,8 +3,10 @@ import torch.nn as nn
 
 from torch.utils.data import Dataset,DataLoader
 from datasets import load_dataset,load_from_disk
+from transformers import AutoTokenizer
 
 import os
+
 
 
 
@@ -47,9 +49,13 @@ class TextDataset(Dataset):
 
 
 
-def get_dataloader(dataset_path,local_path,split,batch_size,tokenizer,max_len):
 
 
+def get_dataloader(split,batch_size,max_len):
+
+    local_path = "./TinyStories"
+    dataset_path = "roneneldan/TinyStories"
+    
     # Check if already downloaded
     if os.path.exists(local_path):
         print("Loading from disk...")
@@ -64,6 +70,7 @@ def get_dataloader(dataset_path,local_path,split,batch_size,tokenizer,max_len):
         
     data_split = dataset[split]   # train / validation
     
+    tokenizer = AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-hf")
     dataset_wrapper = TextDataset(data_split,tokenizer,max_len)
     
     data_loader = DataLoader(dataset_wrapper,batch_size=batch_size,shuffle=True)
@@ -72,18 +79,22 @@ def get_dataloader(dataset_path,local_path,split,batch_size,tokenizer,max_len):
     
     
     
+   
+   
+   
+   
+   
+   
+   
     
     
     
 if __name__=='__main__':
     
-    from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-hf")
-    
-    local_path = "~/Projects/datasets/TinyStories"
-    dataset_path = "roneneldan/TinyStories"
+    # local_path = "./TinyStories"
+    # dataset_path = "roneneldan/TinyStories"
     
     batch_size = 4
     max_len = 512 
     
-    print(next(iter(get_dataloader(dataset_path,local_path,'train',batch_size,tokenizer,max_len))))
+    print(next(iter(get_dataloader('train',batch_size,max_len))))
