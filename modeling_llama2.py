@@ -105,7 +105,7 @@ class LlamaMLP(nn.Module):
 
         out = self.out(gate * value)   # gate controls values : model learn it
 
-
+        return out
 
 
 
